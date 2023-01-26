@@ -5,13 +5,58 @@ const LEFT = 3;
 
 let ins = {};
 
-ins.hello = function() {
-  alert('hello, world!!!!');
+function setupMoveOverlay() {
+  let para = document.createElement("h1");
+  para.id = "move-overlay";
+  para.innerHTML = "NONE";
+  para.style.position = "fixed";
+  para.style.left = '5px';
+  para.style.top = '5px';
+  document.body.appendChild(para);
+}
+setupMoveOverlay();
+
+document.addEventListener('keydown', e => {
+
+  setTimeout(ins.findAndDisplay, 50);
+  
+});
+
+ins.findAndDisplay = function() {
+
+  let g = ins.createGame();
+  g.tiles = ins.getTileArray();
+  let disp = document.getElementById("move-overlay");
+  disp.innerHTML = "LOADING...";
+
+  if (g.isGameOver()) {
+    return;
+  }
+  
+  let res = ins.determineBestMove(g, 7, -1);
+
+  switch (res.direction) {
+
+    case UP: disp.innerHTML = "UP"; break;
+    case DOWN: disp.innerHTML = "DOWN"; break;
+    case LEFT: disp.innerHTML = "LEFT"; break;
+    case RIGHT: disp.innerHTML = "RIGHT"; break;
+    default: break;
+      
+  }
+  
+}
+
+ins.dbmWithTimer = function(game, depth, dir) {
+  let startTime = Date.now();
+  let result = ins.determineBestMove(game, depth, dir);
+  console.log("Time taken: " + (Date.now() - startTime) + "ms");
+  return result;
 }
 
 ins.determineBestMove = function(game, depth, dir) {
     
-  if (depth == 0) {
+  if (depth == 0 || game.isGameOver()) {
     return {
       score: game.score,
       direction: dir
@@ -24,22 +69,22 @@ ins.determineBestMove = function(game, depth, dir) {
   if (game.canMove(UP)) {
     validMoves.push(UP);
     let up = game.calcNextState(UP);
-    scores[UP] = determineBestScore(up, depth - 1, UP);
+    scores[UP] = ins.determineBestMove(up, depth - 1, UP);
   }
   if (game.canMove(DOWN)) {
     validMoves.push(DOWN);
     let down = game.calcNextState(DOWN);
-    scores[DOWN] = determineBestScore(down, depth - 1, DOWN);
+    scores[DOWN] = ins.determineBestMove(down, depth - 1, DOWN);
   }
   if (game.canMove(RIGHT)) {
     validMoves.push(RIGHT);
     let right = game.calcNextState(RIGHT);
-    scores[RIGHT] = determineBestScore(right, depth - 1, RIGHT);
+    scores[RIGHT] = ins.determineBestMove(right, depth - 1, RIGHT);
   }
   if (game.canMove(LEFT)) {
     validMoves.push(LEFT);
     let left = game.calcNextState(LEFT);
-    scores[LEFT] = determineBestScore(left, depth - 1, LEFT);
+    scores[LEFT] = ins.determineBestMove(left, depth - 1, LEFT);
   }
 
   let max = -1;
@@ -48,7 +93,7 @@ ins.determineBestMove = function(game, depth, dir) {
     let d = validMoves[i];
     if (scores[d].score > max) {
       max = scores[d].score;
-      outdir = scores[d].direction;
+      outdir = d;
     }
   }
 
@@ -160,7 +205,7 @@ ins.createGame = function() {
   }
 
   game.calcNextState = function(dir) {
-    let g = createGame();
+    let g = ins.createGame();
     g.tiles = [];
     g.indexesMerged = [];
     if (!(game.canMove(dir))) {
